@@ -68,36 +68,23 @@ export async function validateContentAction(
         };
 
         // Fallback to Wikipedia if no internal context
-        // Try MCP first, then fallback to direct API
-        const { getWikipediaViaMCP } = await import('@/lib/mcp-client');
+        // STABILITY FIX: Use direct Wikipedia API instead of MCP to avoid subprocess spawning issues
         const { getWikipediaFullContent } = await import('@/lib/external');
         let trustedContext = originalContext;
         let contextType = "Internal RAG";
 
         if (!originalContext || originalContext.length < 50) {
-            console.log('[Validation] No internal context, trying Wikipedia MCP...');
+            console.log('[Validation] No internal context, using direct Wikipedia API for stability...');
 
-            // Try MCP server first
-            let wikiResult = await getWikipediaViaMCP(prompt);
-
-            // Fallback to direct API if MCP fails
-            if (!wikiResult) {
-                console.log('[Validation] MCP failed, using direct Wikipedia API...');
-                const directResult = await getWikipediaFullContent(prompt);
-                if (directResult) {
-                    wikiResult = {
-                        ...directResult,
-                        source: 'wikipedia-mcp' as const // Keep type consistent
-                    };
-                }
-            }
+            // Use direct Wikipedia API (stable, no subprocess spawning)
+            const wikiResult = await getWikipediaFullContent(prompt);
 
             if (wikiResult) {
                 trustedContext = wikiResult.fullContent || wikiResult.extract;
-                contextType = `External (Wikipedia MCP - ${wikiResult.title})`;
+                contextType = `External (Wikipedia - ${wikiResult.title})`;
                 sourceMetadata = {
                     type: 'wikipedia',
-                    name: `${wikiResult.title} (via MCP)`,
+                    name: wikiResult.title,
                     url: wikiResult.url
                 };
             } else {

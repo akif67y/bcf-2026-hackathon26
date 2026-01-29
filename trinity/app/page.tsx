@@ -176,44 +176,54 @@ export default function Home() {
           </Link>
 
           {/* Card 5: Theory */}
-          <Card className="h-full bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center mb-4">
-                <BookOpen className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle>Theory Materials</CardTitle>
-              <CardDescription>
-                Lecture slides, reading materials, and theoretical concepts organized by week.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Lectures</span>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">PDFs</span>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Notes</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/materials?category=Theory" className="group">
+            <Card className="h-full bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 transition-all duration-300 hover:shadow-xl hover:shadow-slate-500/10 hover:border-slate-400/50 hover:-translate-y-1">
+              <CardHeader>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle className="flex items-center gap-2">
+                  Theory Materials
+                  <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </CardTitle>
+                <CardDescription>
+                  Lecture slides, reading materials, and theoretical concepts organized by week.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Lectures</span>
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">PDFs</span>
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Notes</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
 
           {/* Card 6: Lab */}
-          <Card className="h-full bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200">
-            <CardHeader>
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center mb-4">
-                <FlaskConical className="w-6 h-6 text-white" />
-              </div>
-              <CardTitle>Lab Materials</CardTitle>
-              <CardDescription>
-                Code samples, exercises, and hands-on lab instructions for practical learning.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Code</span>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Exercises</span>
-                <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Solutions</span>
-              </div>
-            </CardContent>
-          </Card>
+          <Link href="/materials?category=Lab" className="group">
+            <Card className="h-full bg-gradient-to-br from-slate-50 to-slate-100 border-slate-200 transition-all duration-300 hover:shadow-xl hover:shadow-slate-500/10 hover:border-slate-400/50 hover:-translate-y-1">
+              <CardHeader>
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-600 to-slate-800 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                  <FlaskConical className="w-6 h-6 text-white" />
+                </div>
+                <CardTitle className="flex items-center gap-2">
+                  Lab Materials
+                  <ArrowRight className="w-4 h-4 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all" />
+                </CardTitle>
+                <CardDescription>
+                  Code samples, exercises, and hands-on lab instructions for practical learning.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Code</span>
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Exercises</span>
+                  <span className="text-xs bg-slate-200 text-slate-700 px-2 py-1 rounded-full">Solutions</span>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         </div>
       </section>
 
@@ -233,7 +243,7 @@ export default function Home() {
                 </Button>
               </Link>
               <Link href="/materials">
-                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="bg-transparent border-white/30 text-white hover:bg-white/10 hover:text-white">
                   <FileText className="w-4 h-4 mr-2" />
                   Browse Content
                 </Button>

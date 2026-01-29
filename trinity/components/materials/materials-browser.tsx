@@ -1,15 +1,31 @@
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useMemo } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { getMaterialsWithMetadata, type Material } from '@/actions/materials';
 import { MaterialCard } from './material-card';
 import { Button } from '@/components/ui/button';
 import { Loader2, BookOpen, FlaskConical, LayoutGrid } from 'lucide-react';
 
 export function MaterialsBrowser() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
     const [materials, setMaterials] = useState<Material[]>([]);
-    const [activeTab, setActiveTab] = useState<'All' | 'Theory' | 'Lab'>('All');
     const [isPending, startTransition] = useTransition();
+
+    const categoryParam = searchParams.get('category');
+    const activeTab: 'All' | 'Theory' | 'Lab' = (categoryParam === 'Theory' || categoryParam === 'Lab') ? categoryParam : 'All';
+
+    const setActiveTab = (tab: 'All' | 'Theory' | 'Lab') => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (tab === 'All') {
+            params.delete('category');
+        } else {
+            params.set('category', tab);
+        }
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    };
 
     useEffect(() => {
         startTransition(async () => {
@@ -18,15 +34,16 @@ export function MaterialsBrowser() {
         });
     }, []);
 
-    const filteredMaterials = activeTab === 'All'
-        ? materials
-        : materials.filter(m => m.category === activeTab);
+    const filteredMaterials = useMemo(() => {
+        if (activeTab === 'All') return materials;
+        return materials.filter(m => m.category === activeTab);
+    }, [materials, activeTab]);
 
-    const counts = {
+    const counts = useMemo(() => ({
         All: materials.length,
         Theory: materials.filter(m => m.category === 'Theory').length,
         Lab: materials.filter(m => m.category === 'Lab').length,
-    };
+    }), [materials]);
 
     return (
         <div className="space-y-6">

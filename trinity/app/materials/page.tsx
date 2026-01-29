@@ -1,8 +1,9 @@
+import { Suspense } from 'react';
 import { MaterialsBrowser } from '@/components/materials/materials-browser';
 import SemanticSearch from '@/components/semantic-search';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, GraduationCap, Search, BookOpen } from 'lucide-react';
+import { ArrowLeft, GraduationCap, Search, BookOpen, Loader2 } from 'lucide-react';
 
 export default function MaterialsPage() {
     return (
@@ -38,7 +39,9 @@ export default function MaterialsPage() {
                         <BookOpen className="w-5 h-5 text-primary" />
                         <h2 className="text-lg font-semibold">Browse Materials</h2>
                     </div>
-                    <MaterialsBrowser />
+                    <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-muted-foreground" /></div>}>
+                        <MaterialsBrowser />
+                    </Suspense>
                 </div>
 
                 {/* Right: Ask Questions (1/3) */}
