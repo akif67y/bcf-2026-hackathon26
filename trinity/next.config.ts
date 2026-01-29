@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  serverExternalPackages: ['@xenova/transformers', 'pdf-parse'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'hbkgefwqqgjslveoedwa.supabase.co',
+      },
+    ],
+  },
 };
 
 export default nextConfig;
