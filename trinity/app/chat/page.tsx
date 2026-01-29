@@ -33,10 +33,10 @@ export default function ChatPage() {
     }, [messages]);
 
     const suggestions = [
-        "What materials are uploaded?",
-        "Explain binary search from the lectures",
-        "Generate theory notes on recursion",
-        "Create a lab exercise for sorting"
+        "Explain binary search with an example",
+        "What is recursion?",
+        "How do sorting algorithms work?",
+        "Explain Big O notation"
     ];
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -86,8 +86,8 @@ export default function ChatPage() {
                                 <div>
                                     <h3 className="text-lg font-semibold text-foreground">Trinity AI</h3>
                                     <p className="max-w-md mx-auto">
-                                        I can search your course materials, explain concepts, list uploaded files,
-                                        and generate theory notes or lab exercises.
+                                        I can help you understand programming concepts, explain algorithms,
+                                        and answer your computer science questions.
                                     </p>
                                 </div>
                                 <div className="flex flex-wrap justify-center gap-2 mt-6">
@@ -162,7 +162,7 @@ export default function ChatPage() {
                                 <Card className="p-4 bg-card">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                        <span className="text-sm">Searching course materials...</span>
+                                        <span className="text-sm">Thinking...</span>
                                     </div>
                                 </Card>
                             </div>
@@ -178,7 +178,7 @@ export default function ChatPage() {
                 <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask a question about your course materials..."
+                    placeholder="Ask me anything about programming..."
                     className="flex-1 bg-background/80 backdrop-blur-sm"
                     disabled={isLoading}
                 />
