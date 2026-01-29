@@ -1,30 +1,42 @@
-import { MaterialSearch } from "@/components/material-search";
-import { UploadMaterial } from "@/components/upload-material";
+import { UploadMaterial as UploadForm } from '@/components/upload-material';
+import SemanticSearch from '@/components/semantic-search'; // <--- NEW COMPONENT
 
 export default function Home() {
   return (
-    <div className="min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 items-center sm:items-start max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold tracking-tight">Trinity Knowledge Base</h1>
-        <p className="text-muted-foreground text-lg">
-          Upload PDF materials and search them using local AI embeddings.
-        </p>
+    <main className="container py-10 space-y-12">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-          <div className="flex flex-col gap-4">
-            <UploadMaterial />
-          </div>
-          <div className="flex flex-col gap-4">
-            {/* Search can take full width or side column */}
-          </div>
+      {/* Header */}
+      <div className="text-center space-y-2">
+        <h1 className="text-3xl font-bold">University Learning Platform</h1>
+        <p className="text-muted-foreground">Upload course PDFs and search them instantly.</p>
+      </div>
+
+      <div className="grid md:grid-cols-12 gap-8">
+
+        {/* LEFT COLUMN: Admin Upload (CMS) */}
+        <div className="md:col-span-4 space-y-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+            Upload Material
+          </h2>
+          <UploadForm />
         </div>
 
-        {/* Search is wide so it goes below or stays in column if we want. Let's make it full width below */}
-        <div className="w-full">
-          <MaterialSearch />
+        {/* RIGHT COLUMN: Semantic Search (The Interaction) */}
+        <div className="md:col-span-8 space-y-4">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <span className="bg-primary text-primary-foreground w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+            Explore Content (RAG Search)
+          </h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            Test the "Intelligent Search" requirement. This retrieves excerpts directly from your DB.
+          </p>
+
+          {/* THE NEW UI HERE */}
+          <SemanticSearch />
         </div>
 
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }

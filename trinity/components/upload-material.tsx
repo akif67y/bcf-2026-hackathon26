@@ -23,8 +23,8 @@ export function UploadMaterial() {
             return { ...prev, error: result.error, success: false };
         }
         if (result.success) {
-            toast.success(result.message);
-            return { ...prev, message: result.message, success: true };
+            toast.success("Material uploaded and embedded successfully!"); // Fixed generic message
+            return { ...prev, message: "Material uploaded and embedded successfully!", success: true };
         }
         return prev;
     }, initialState);
@@ -33,7 +33,7 @@ export function UploadMaterial() {
         <Card className="w-full max-w-md">
             <CardHeader>
                 <CardTitle>Upload Learning Material</CardTitle>
-                <CardDescription>Upload PDFs to generate local embeddings.</CardDescription>
+                <CardDescription>Upload PDFs, text, or code files (.txt, .md, .py, .js) to generate local embeddings.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form action={action} className="space-y-4">
@@ -57,9 +57,14 @@ export function UploadMaterial() {
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="file">PDF File</Label>
-                        <Input id="file" name="file" type="file" accept=".pdf" required />
-                        <input type="hidden" name="type" value="text" />
+                        <Label htmlFor="file">File (PDF, Text, Code)</Label>
+                        <Input
+                            id="file"
+                            name="file"
+                            type="file"
+                            accept=".pdf, .txt, .md, .py, .js, .ts, .tsx, .json, .java, .c, .cpp"
+                            required
+                        />
                     </div>
 
                     <Button type="submit" disabled={isPending} className="w-full">
