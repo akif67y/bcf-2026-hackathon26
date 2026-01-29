@@ -6,10 +6,11 @@ import { getEmbeddings } from '@/lib/ai/embedding';
 
 export const maxDuration = 60; // Allow 60s for generation
 
-// Schemas
-const TheorySchema = z.object({
-    type: z.literal('Theory'),
+// Unified Schema (discriminated unions can cause streaming parse issues)
+const LearningMaterialSchema = z.object({
+    type: z.enum(['Theory', 'Lab']),
     title: z.string(),
+    // Theory fields
     readingNotes: z.object({
         summary: z.string(),
         keyPoints: z.array(z.string()),
@@ -17,26 +18,20 @@ const TheorySchema = z.object({
             heading: z.string(),
             content: z.string(),
         })),
-    }),
+    }).optional(),
     slides: z.array(z.object({
         slideTitle: z.string(),
         bulletPoints: z.array(z.string()),
         speakerNotes: z.string().optional(),
-    })),
-});
-
-const LabSchema = z.object({
-    type: z.literal('Lab'),
-    title: z.string(),
-    language: z.string(),
-    difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced']),
-    description: z.string(),
-    code: z.string(),
-    instructions: z.array(z.string()),
+    })).optional(),
+    // Lab fields
+    language: z.string().optional(),
+    difficulty: z.enum(['Beginner', 'Intermediate', 'Advanced']).optional(),
+    description: z.string().optional(),
+    code: z.string().optional(),
+    instructions: z.array(z.string()).optional(),
     solution: z.string().optional(),
 });
-
-const LearningMaterialSchema = z.discriminatedUnion('type', [TheorySchema, LabSchema]);
 
 // External Knowledge (Wikipedia)
 import { getExternalContext } from '@/lib/external';

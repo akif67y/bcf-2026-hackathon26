@@ -80,6 +80,24 @@ export function LivePreview({ object, mode, validationReport, isValidating, onVa
                                 {validationReport.citationAccuracy}%
                             </span>
                         </div>
+                        <div className="flex flex-col">
+                            <span className="text-muted-foreground uppercase tracking-wider">Source</span>
+                            {validationReport.validationSource?.url ? (
+                                <a
+                                    href={validationReport.validationSource.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-500 hover:text-blue-600 font-medium underline"
+                                >
+                                    {validationReport.validationSource.type === 'wikipedia' ? '📚 Wikipedia' : validationReport.validationSource.name}
+                                </a>
+                            ) : (
+                                <span className="font-medium text-muted-foreground">
+                                    {validationReport.validationSource?.type === 'internal_rag' ? '📁 Internal' :
+                                        validationReport.validationSource?.type === 'wikipedia' ? '📚 Wikipedia' : '🎓 Academic'}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     {/* Hallucinations Warning */}

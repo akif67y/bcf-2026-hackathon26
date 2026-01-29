@@ -116,3 +116,56 @@ async function searchWikipedia(query: string): Promise<string | null> {
         return null;
     }
 }
+
+// MCP-style tool: Get related Wikipedia topics for comprehensive validation
+export async function getWikipediaRelatedTopics(topic: string): Promise<string[]> {
+    try {
+        console.log(`[Wikipedia MCP] Getting related topics for: ${topic}`);
+
+        // Use Wikipedia's "See also" links via the API
+        const res = await fetch(
+            `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(topic)}&prop=links&pllimit=10&format=json&origin=*`
+        );
+
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        const pages = data.query?.pages;
+        if (!pages) return [];
+
+        const pageId = Object.keys(pages)[0];
+        const links = pages[pageId]?.links || [];
+
+        return links
+            .map((link: any) => link.title)
+            .filter((title: string) => !title.includes(':')) // Filter out special pages
+            .slice(0, 5);
+    } catch (e) {
+        console.error("Wikipedia Related Topics Error:", e);
+        return [];
+    }
+}
+
+// MCP-style tool: Get "On This Day" historical facts (bonus feature)
+export async function getWikipediaOnThisDay(): Promise<{ text: string; year: number }[]> {
+    try {
+        const today = new Date();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+
+        const res = await fetch(
+            `https://en.wikipedia.org/api/rest_v1/feed/onthisday/events/${month}/${day}`
+        );
+
+        if (!res.ok) return [];
+
+        const data = await res.json();
+        return (data.events || []).slice(0, 5).map((e: any) => ({
+            text: e.text,
+            year: e.year
+        }));
+    } catch (e) {
+        console.error("Wikipedia OnThisDay Error:", e);
+        return [];
+    }
+}

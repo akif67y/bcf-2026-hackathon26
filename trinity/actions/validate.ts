@@ -56,19 +56,58 @@ export async function validateContentAction(
 
         const originalContext = chunks?.map((c: any) => c.content_chunk).join("\n\n") || "";
 
+        // Source metadata for tracking
+        let sourceMetadata: {
+            type: 'internal_rag' | 'wikipedia' | 'general_knowledge';
+            name: string;
+            url?: string;
+        } = {
+            type: 'internal_rag',
+            name: chunks?.[0]?.material_title || 'Uploaded Materials',
+            url: undefined
+        };
+
         // Fallback to Wikipedia if no internal context
-        const { getExternalContext } = await import('@/lib/external');
+        // Try MCP first, then fallback to direct API
+        const { getWikipediaViaMCP } = await import('@/lib/mcp-client');
+        const { getWikipediaFullContent } = await import('@/lib/external');
         let trustedContext = originalContext;
         let contextType = "Internal RAG";
 
         if (!originalContext || originalContext.length < 50) {
-            const wikiContext = await getExternalContext(prompt);
-            if (wikiContext) {
-                trustedContext = wikiContext;
-                contextType = "External (Wikipedia)";
+            console.log('[Validation] No internal context, trying Wikipedia MCP...');
+
+            // Try MCP server first
+            let wikiResult = await getWikipediaViaMCP(prompt);
+
+            // Fallback to direct API if MCP fails
+            if (!wikiResult) {
+                console.log('[Validation] MCP failed, using direct Wikipedia API...');
+                const directResult = await getWikipediaFullContent(prompt);
+                if (directResult) {
+                    wikiResult = {
+                        ...directResult,
+                        source: 'wikipedia-mcp' as const // Keep type consistent
+                    };
+                }
+            }
+
+            if (wikiResult) {
+                trustedContext = wikiResult.fullContent || wikiResult.extract;
+                contextType = `External (Wikipedia MCP - ${wikiResult.title})`;
+                sourceMetadata = {
+                    type: 'wikipedia',
+                    name: `${wikiResult.title} (via MCP)`,
+                    url: wikiResult.url
+                };
             } else {
                 trustedContext = "No specific context found. Use General Academic Knowledge.";
                 contextType = "General Knowledge";
+                sourceMetadata = {
+                    type: 'general_knowledge',
+                    name: 'Academic Consensus',
+                    url: undefined
+                };
             }
         }
 
@@ -83,6 +122,11 @@ export async function validateContentAction(
       - Type: ${type}
       - Generated Content: ${JSON.stringify(generatedContent)}
       - Source Material (${contextType}): ${trustedContext.slice(0, 15000)}
+      
+      VALIDATION SOURCE (use this for validationSource field):
+      - type: "${sourceMetadata.type}"
+      - name: "${sourceMetadata.name}"
+      - url: ${sourceMetadata.url ? `"${sourceMetadata.url}"` : 'null'}
 
       TASKS:
       1. SYNTAX CHECK: If code exists, mentally compile it. Are there errors?
@@ -92,6 +136,7 @@ export async function validateContentAction(
          - If Source is "External (Wikipedia)" or "General Knowledge", validate based on factual accuracy of that source/standard consensus.
          - Do NOT flag "unsupported by source" if the source is General Knowledge/Wikipedia and the content is factually correct. Only flag if it CONTRADICTS.
       3. TEST CASE (Lab Only): If this is a Lab, generate a simple input, trace the code execution step-by-step.
+      4. VALIDATION SOURCE: Set the validationSource field using the VALIDATION SOURCE data provided above.
 
       SCORING GUIDE:
       - If "No internal context found" and content is factually correct (General Knowledge), score it HIGH (90-100) and mark as "Valid".
