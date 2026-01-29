@@ -25,8 +25,8 @@ export function MaterialSearch() {
 
         try {
             const result = await search(query);
-            if (result.success && result.data) {
-                setResults(result.data);
+            if (result.sources) {
+                setResults(result.sources);
             } else {
                 toast.error('Failed to search materials');
             }
@@ -58,9 +58,9 @@ export function MaterialSearch() {
                 <div className="space-y-4">
                     {results.map((result) => (
                         <div key={result.id} className="p-4 border rounded-lg bg-muted/50">
-                            <div className="font-semibold text-sm mb-1">{result.material_title}</div>
+                            <div className="font-semibold text-sm mb-1">{result.filename}</div>
                             <div className="text-sm text-foreground/80 line-clamp-3">
-                                {result.content_chunk}
+                                {result.content}
                             </div>
                             <div className="text-xs text-secondary-foreground mt-2">
                                 Similarity: {(result.similarity * 100).toFixed(1)}%
