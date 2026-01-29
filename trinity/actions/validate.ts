@@ -1,0 +1,102 @@
+'use server';
+
+import { google } from "@ai-sdk/google";
+import { generateObject } from "ai";
+import { z } from "zod";
+
+const ValidationResultSchema = z.object({
+    // 1. Syntax & Reliability (Rubric)
+    syntaxValid: z.boolean().describe("Is the code syntactically correct?"),
+    academicTone: z.boolean().describe("Is the language formal and objective?"),
+
+    // 2. Reference Grounding (The most important part)
+    hallucinations: z.array(z.string()).describe("List of claims not supported by the provided context."),
+    citationAccuracy: z.number().min(0).max(100).describe("Percentage of facts that are correctly cited."),
+
+    // 3. Automated Test (AI Simulation)
+    testCase: z.object({
+        input: z.string().describe("A sample input for the generated code"),
+        expectedOutput: z.string().describe("What the code SHOULD return"),
+        predictedOutput: z.string().describe("What the code ACTUALLY returns based on logic analysis"),
+        passed: z.boolean()
+    }).optional().describe("Only for Lab/Code content"),
+
+    finalScore: z.number().min(0).max(100),
+    feedback: z.string().describe("Brief feedback for the student"),
+});
+
+import { createClient } from '@/utils/supabase/server';
+import { getEmbeddings } from '@/lib/ai/embedding';
+
+// ... other imports ...
+
+export async function validateContentAction(
+    generatedContent: any,
+    prompt: string,
+    type: 'Theory' | 'Lab'
+) {
+    try {
+        // 1. Re-fetch Context Verification (Grounding)
+        // We re-run the RAG search here to get the "Source Truth" to compare against.
+        const supabase = await createClient();
+        const vectors = await getEmbeddings([prompt]);
+
+        const { data: chunks, error } = await supabase.rpc('match_documents', {
+            query_embedding: vectors[0],
+            match_threshold: 0.5, // Broad search to capture all potential context
+            match_count: 5,
+        });
+
+        const originalContext = chunks?.map((c: any) => c.content_chunk).join("\n\n") || "";
+
+        // Fallback to Wikipedia if no internal context
+        const { getExternalContext } = await import('@/lib/external');
+        let trustedContext = originalContext;
+        let contextType = "Internal RAG";
+
+        if (!originalContext || originalContext.length < 50) {
+            const wikiContext = await getExternalContext(prompt);
+            if (wikiContext) {
+                trustedContext = wikiContext;
+                contextType = "External (Wikipedia)";
+            } else {
+                trustedContext = "No specific context found. Use General Academic Knowledge.";
+                contextType = "General Knowledge";
+            }
+        }
+
+        const { object } = await generateObject({
+            model: google("gemini-2.5-flash"),
+            schema: ValidationResultSchema,
+            prompt: `
+      Act as a Strict Academic Reviewer. Validate the following AI-generated content.
+
+      INPUT DATA:
+      - User Prompt: "${prompt}"
+      - Type: ${type}
+      - Generated Content: ${JSON.stringify(generatedContent)}
+      - Source Material (${contextType}): ${trustedContext.slice(0, 15000)}
+
+      TASKS:
+      1. SYNTAX CHECK: If code exists, mentally compile it. Are there errors?
+      2. GROUNDING CHECK: Verify that every claim in the "Generated Content" is supported by the "Source Material". 
+         - NOTE: The Source Material provided is ${contextType}.
+         - If Source is "Internal RAG", be STRICT. Flag deviations.
+         - If Source is "External (Wikipedia)" or "General Knowledge", validate based on factual accuracy of that source/standard consensus.
+         - Do NOT flag "unsupported by source" if the source is General Knowledge/Wikipedia and the content is factually correct. Only flag if it CONTRADICTS.
+      3. TEST CASE (Lab Only): If this is a Lab, generate a simple input, trace the code execution step-by-step.
+
+      SCORING GUIDE:
+      - If "No internal context found" and content is factually correct (General Knowledge), score it HIGH (90-100) and mark as "Valid".
+      - Only give 0/100 if it is WRONG or contradicts the provided source.
+      
+      Be strictly accurate but fair regarding source availability.
+    `,
+        });
+
+        return object;
+    } catch (e) {
+        console.error("Validation Error:", e);
+        return null;
+    }
+}

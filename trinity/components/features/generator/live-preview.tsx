@@ -1,6 +1,6 @@
 'use client';
 
-import ReactMarkdown from 'react-markdown';
+import { MarkdownRenderer } from '@/components/ui/markdown-renderer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'; // Need to check if Tabs exists, otherwise use custom
 import { Badge } from '@/components/ui/badge';
@@ -21,13 +21,99 @@ import { Button } from '@/components/ui/button';
 interface LivePreviewProps {
     object: any; // The partial object from streaming
     mode: 'Theory' | 'Lab';
+    validationReport?: any; // Add validation report prop
+    isValidating?: boolean;
+    onValidate?: () => void; // Manual trigger
 }
 
-export function LivePreview({ object, mode }: LivePreviewProps) {
+export function LivePreview({ object, mode, validationReport, isValidating, onValidate }: LivePreviewProps) {
     const [activeTab, setActiveTab] = useState('notes');
     const [currentSlide, setCurrentSlide] = useState(0);
 
     if (!object) return null;
+
+    // Validation Banner
+    const renderValidationStatus = () => {
+        if (isValidating) {
+            return (
+                <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-indigo-500/20 animate-pulse flex items-center justify-center space-x-2">
+                    <div className="h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm font-medium text-indigo-500"> validating academic accuracy...</span>
+                </div>
+            );
+        }
+
+        if (validationReport) {
+            const isPassing = validationReport.finalScore >= 70;
+            return (
+                <div className={`mb-6 p-4 rounded-lg border flex flex-col gap-2 ${isPassing ? 'bg-green-500/5 border-green-500/20' : 'bg-amber-500/5 border-amber-500/20'}`}>
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <span className="text-xl">{isPassing ? '✅' : '⚠️'}</span>
+                            <span className={`font-bold ${isPassing ? 'text-green-600' : 'text-amber-600'}`}>
+                                {isPassing ? 'Academically Verified' : 'Review Suggested'}
+                            </span>
+                            <Badge variant={isPassing ? 'outline' : 'destructive'} className="ml-2">
+                                Score: {validationReport.finalScore}/100
+                            </Badge>
+                        </div>
+                        <Button variant="ghost" size="sm" onClick={onValidate} className="text-xs h-6">Re-Verify</Button>
+                    </div>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs mt-2">
+                        <div className="flex flex-col">
+                            <span className="text-muted-foreground uppercase tracking-wider">Syntax</span>
+                            <span className={validationReport.syntaxValid ? 'text-green-600 font-medium' : 'text-red-500 font-medium'}>
+                                {validationReport.syntaxValid ? 'Valid' : 'Errors'}
+                            </span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-muted-foreground uppercase tracking-wider">Tone</span>
+                            <span className={validationReport.academicTone ? 'text-green-600 font-medium' : 'text-amber-500 font-medium'}>
+                                {validationReport.academicTone ? 'Formal' : 'Casual'}
+                            </span>
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="text-muted-foreground uppercase tracking-wider">Citations</span>
+                            <span className={`font-medium ${validationReport.citationAccuracy > 80 ? 'text-green-600' : 'text-amber-500'}`}>
+                                {validationReport.citationAccuracy}%
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Hallucinations Warning */}
+                    {validationReport.hallucinations?.length > 0 && (
+                        <div className="mt-2 bg-red-500/10 p-3 rounded text-sm text-red-600 border border-red-500/10">
+                            <strong>Potential Inaccuracies:</strong>
+                            <ul className="list-disc list-inside mt-1">
+                                {validationReport.hallucinations.slice(0, 3).map((h: string, i: number) => (
+                                    <li key={i}>{h}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Show manual validate button if no report yet (and not loading)
+        return (
+            <div className="mb-4 flex justify-end">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onValidate}
+                    disabled={isValidating}
+                    className="text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border-indigo-200"
+                >
+                    <GraduationCap className="mr-2 h-4 w-4" />
+                    Verify Academic Accuracy
+                </Button>
+            </div>
+        );
+    };
+
 
     // Theory View
     if (mode === 'Theory') {
@@ -105,6 +191,8 @@ export function LivePreview({ object, mode }: LivePreviewProps) {
 
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
+                {renderValidationStatus()}
+
                 <div className="flex items-center justify-between">
                     <h2 className="text-3xl font-bold tracking-tight">{object.title || 'Generating Title...'}</h2>
                     <div className="flex gap-2">
@@ -218,7 +306,7 @@ export function LivePreview({ object, mode }: LivePreviewProps) {
                                 <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border/50">
                                     <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2">Summary</h4>
                                     <div className="text-lg leading-relaxed text-foreground">
-                                        <ReactMarkdown>{summary}</ReactMarkdown>
+                                        <MarkdownRenderer>{summary}</MarkdownRenderer>
                                     </div>
                                 </div>
                             )}
@@ -241,9 +329,9 @@ export function LivePreview({ object, mode }: LivePreviewProps) {
                                 <div key={i} className="mt-8">
                                     <h3 className="text-xl font-bold text-foreground mb-4 pb-2 border-b border-border/30">{section.heading}</h3>
                                     <div className="markdown-content text-muted-foreground">
-                                        <ReactMarkdown>
+                                        <MarkdownRenderer>
                                             {section.content}
-                                        </ReactMarkdown>
+                                        </MarkdownRenderer>
                                     </div>
                                 </div>
                             ))}
@@ -318,6 +406,7 @@ export function LivePreview({ object, mode }: LivePreviewProps) {
     if (mode === 'Lab') {
         return (
             <div className="space-y-6 animate-in fade-in duration-500">
+                {renderValidationStatus()}
                 <div className="flex items-center justify-between">
                     <h2 className="text-3xl font-bold tracking-tight">{object.title || 'Designing Lab...'}</h2>
                     <div className="flex gap-2">
@@ -376,9 +465,9 @@ export function LivePreview({ object, mode }: LivePreviewProps) {
                         </CardHeader>
                         <CardContent>
                             <div className="prose dark:prose-invert max-w-none">
-                                <ReactMarkdown>
+                                <MarkdownRenderer>
                                     {object.solution}
-                                </ReactMarkdown>
+                                </MarkdownRenderer>
                             </div>
                         </CardContent>
                     </Card>

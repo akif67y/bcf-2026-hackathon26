@@ -1,4 +1,3 @@
-
 import { google } from '@ai-sdk/google';
 import { streamObject } from 'ai';
 import { z } from 'zod';
@@ -39,12 +38,8 @@ const LabSchema = z.object({
 
 const LearningMaterialSchema = z.discriminatedUnion('type', [TheorySchema, LabSchema]);
 
-// Mock External Knowledge
-async function searchExternalKnowledge(query: string) {
-    console.log(`[Method: MCP] Searching external knowledge for: ${query}`);
-    // Mock response
-    return `External Context: Basic academic knowledge about "${query}".`;
-}
+// External Knowledge (Wikipedia)
+import { getExternalContext } from '@/lib/external';
 
 // Internal RAG
 async function searchInternalContext(query: string, supabase: any) {
@@ -60,7 +55,7 @@ async function searchInternalContext(query: string, supabase: any) {
             console.error("RPC Error:", error);
             return "";
         }
-        return data?.map((d: any) => d.content_chunk).join("\n\n") || "";
+        return data?.map((d: any) => `[Source: ${d.material_title || 'Unknown'}]\n${d.content_chunk}`).join("\n\n") || "";
     } catch (e) {
         console.error("Embedding Error:", e);
         return "";
@@ -73,45 +68,38 @@ export async function POST(req: Request) {
 
     console.log(`🚀 [API] Generating ${mode} for: "${prompt}"`);
 
-    // 1. Context Retrieval
+    // 1. Context Retrieval (Parallel)
     const [internalContext, externalContext] = await Promise.all([
         searchInternalContext(prompt, supabase),
-        searchExternalKnowledge(prompt),
+        getExternalContext(prompt),
     ]);
 
     const fullContext = `
-    INTERNAL CONTEXT (User Uploaded Materials):
+    PRIORITY INTERNAL CONTEXT (User Uploaded Materials):
     ${internalContext}
 
-    EXTERNAL CONTEXT (General Knowledge):
-    ${externalContext}
-
-    AI INTERNAL KNOWLEDGE:
-    Use your training data to supplement the above contexts.
+    SUPPLEMENTARY EXTERNAL CONTEXT (Wikipedia):
+    ${externalContext || "No external context available."}
   `;
 
     // 2. Stream Object
     try {
         const result = streamObject({
-            model: google('gemini-2.5-flash'), // Switched to 2.5-flash as requested
+            model: google('gemini-2.5-flash'),
             schema: LearningMaterialSchema,
             system: `
-        You are an expert educational content generator.
-        Goal: Create high-quality ${mode} materials for the topic: "${prompt}".
+        You are an expert academic content generator.
 
-        Context:
-        ${fullContext}
-
-        Instructions:
-        - Internal Context is PRIORITY.
-        - Mode "${mode}" requires a specific structure.
-        Instructions:
-        - Internal Context is PRIORITY.
-        - Mode "${mode}" requires a specific structure.
-        - IMPORTANT: Output MUST be valid JSON matching the schema.
-        - Keep content concise where possible.
-        - For "Theory", use nested objects: { readingNotes: { summary: "...", keyPoints: [...] }, slides: [...] }.
-        - For "Lab", use: { title: "...", description: "...", code: "..." }.
+        INSTRUCTIONS:
+        1. Use the provided context to generate ${mode} materials for the topic: "${prompt}".
+        2. VISUALS: If a concept is complex, generate a 'Mermaid.js' diagram in a standard markdown code block (e.g., \`\`\`mermaid graph TD...\`\`\`). Place these inside the 'detailedSections' content or 'readingNotes' where appropriate.
+        3. CITATIONS: Cite the internal source filenames using [Source: filename] whenever you use information from the Internal Context.
+        4. ACCURACY: Strictly adhere to the provided Internal Context. Use External Context only to fill gaps, but prioritize Internal.
+        
+        FORMATTING:
+        - Output MUST be valid JSON matching the schema.
+        - For "Theory", use nested objects structure.
+        - For "Lab", use code and instructions.
         `,
             prompt: `Generate ${mode} materials for "${prompt}".`,
             onFinish: async ({ object }) => {
