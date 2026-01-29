@@ -11,7 +11,8 @@ import {
   Shield,
   FlaskConical,
   FileText,
-  Zap
+  Zap,
+  MessageCircle
 } from 'lucide-react';
 
 export default function Home() {
@@ -263,6 +264,23 @@ export default function Home() {
           <p>Built for BUET CSE Fest Hackathon 2026</p>
         </div>
       </footer>
+
+      {/* Floating Chat Button */}
+      <Link href="/chat">
+        <div className="fixed bottom-6 right-6 z-50 group">
+          <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-full blur opacity-70 group-hover:opacity-100 transition duration-300"></div>
+          <Button
+            size="lg"
+            className="relative w-14 h-14 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 shadow-xl"
+          >
+            <MessageCircle className="w-6 h-6" />
+            <span className="sr-only">Open Chat</span>
+          </Button>
+          <span className="absolute -top-10 right-0 bg-card border rounded-lg px-3 py-1.5 text-sm font-medium shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            Ask Trinity AI
+          </span>
+        </div>
+      </Link>
     </main >
   );
 }

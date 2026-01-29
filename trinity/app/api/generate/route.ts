@@ -10,24 +10,62 @@ export async function POST(req: Request) {
         return new Response('Prompt is required', { status: 400 });
     }
 
-    const systemPrompt = `You are an expert academic content generator. Generate COMPREHENSIVE learning materials in Markdown.
+    const systemPrompt = mode === 'Lab' 
+        ? `You are a concise coding instructor. Generate SHORT, practical lab materials.
 
-For ${mode || 'Theory'} mode:
-${mode === 'Lab' ? `- Start with "## Problem Description"
-- Include "## Instructions" (numbered list)
-- Provide "## Starter Code" (code block)
-- Provide "## Solution Walkthrough"` : `- Start with "## Summary"
-- Include "## Key Points"
-- Create detailed sections with "## [Topic Name]"
-- End with "## Review Questions"`}
+FORMAT (strictly follow):
+## Problem Description
+[2-3 sentences max]
 
-Output only valid Markdown. Be thorough and educational.`;
+## Instructions
+1. [Step]
+2. [Step]
+(max 5 steps)
+
+## Starter Code
+\`\`\`[language]
+[minimal skeleton code]
+\`\`\`
+
+## Solution
+\`\`\`[language]
+[working solution with brief inline comments]
+\`\`\`
+
+RULES:
+- Be brief. No fluff.
+- Code comments only where essential.
+- Max 300 words total.`
+        : `You are a concise academic writer. Generate SHORT, focused theory notes.
+
+FORMAT (strictly follow):
+## Summary
+[2-3 sentences max]
+
+## Key Points
+- [Point 1]
+- [Point 2]
+- [Point 3]
+(max 5 points)
+
+## Core Concepts
+### [Concept Name]
+[1-2 sentences explanation]
+
+## Quick Review
+1. [Question]?
+2. [Question]?
+
+RULES:
+- Be brief. No fluff.
+- Use bullet points over paragraphs.
+- Max 250 words total.`;
 
     try {
         const result = await streamText({
             model: google('gemini-3-flash-preview'),
             system: systemPrompt,
-            prompt: `Generate comprehensive ${mode || 'Theory'} materials for: "${prompt}"`,
+            prompt: `Topic: "${prompt}". Be concise.`,
         });
 
         return result.toTextStreamResponse();
