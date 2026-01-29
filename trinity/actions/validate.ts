@@ -13,7 +13,14 @@ const ValidationResultSchema = z.object({
     hallucinations: z.array(z.string()).describe("List of claims not supported by the provided context."),
     citationAccuracy: z.number().min(0).max(100).describe("Percentage of facts that are correctly cited."),
 
-    // 3. Automated Test (AI Simulation)
+    // 3. Validation Source Tracking
+    validationSource: z.object({
+        type: z.enum(['internal_rag', 'wikipedia', 'general_knowledge']).describe("Source used for validation"),
+        name: z.string().optional().describe("Name of the source (e.g., Wikipedia article title)"),
+        url: z.string().optional().describe("URL to the source if available"),
+    }),
+
+    // 4. Automated Test (AI Simulation)
     testCase: z.object({
         input: z.string().describe("A sample input for the generated code"),
         expectedOutput: z.string().describe("What the code SHOULD return"),

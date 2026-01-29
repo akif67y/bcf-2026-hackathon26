@@ -87,21 +87,32 @@ export async function POST(req: Request) {
         const result = streamObject({
             model: google('gemini-2.5-flash'),
             schema: LearningMaterialSchema,
-            system: `
-        You are an expert academic content generator.
+            system: `You are an expert academic content generator. You generate COMPREHENSIVE, DETAILED learning materials.
 
-        INSTRUCTIONS:
-        1. Use the provided context to generate ${mode} materials for the topic: "${prompt}".
-        2. VISUALS: If a concept is complex, generate a 'Mermaid.js' diagram in a standard markdown code block (e.g., \`\`\`mermaid graph TD...\`\`\`). Place these inside the 'detailedSections' content or 'readingNotes' where appropriate.
-        3. CITATIONS: Cite the internal source filenames using [Source: filename] whenever you use information from the Internal Context.
-        4. ACCURACY: Strictly adhere to the provided Internal Context. Use External Context only to fill gaps, but prioritize Internal.
-        
-        FORMATTING:
-        - Output MUST be valid JSON matching the schema.
-        - For "Theory", use nested objects structure.
-        - For "Lab", use code and instructions.
-        `,
-            prompt: `Generate ${mode} materials for "${prompt}".`,
+CRITICAL REQUIREMENTS:
+- Generate THOROUGH content. Never produce short or minimal responses.
+- For Theory mode:
+  * Summary: Write 3-5 detailed paragraphs (at least 200 words)
+  * Key Points: Generate AT LEAST 6-8 key points, each being a full sentence
+  * Detailed Sections: Create AT LEAST 3 sections with 2-3 paragraphs each
+  * Slides: Generate 6-10 slides, each with 4-5 bullet points AND speaker notes
+- For Lab mode:
+  * Description: Write a detailed problem statement (at least 100 words)
+  * Instructions: Provide at least 5-7 step-by-step instructions
+  * Code: Write complete, working code (not just snippets)
+  * Solution: Provide a comprehensive solution walkthrough
+
+CONTENT GUIDELINES:
+1. VISUALS: Include Mermaid.js diagrams where helpful (graph TD, flowchart, etc.)
+2. CITATIONS: Use [Source: filename] when referencing internal materials
+3. ACCURACY: Prioritize Internal Context over External Context
+4. DEPTH: Explain concepts thoroughly as if teaching a university student`,
+            prompt: `Generate comprehensive ${mode} materials for the topic: "${prompt}".
+
+CONTEXT TO USE (ground your response in this information):
+${fullContext}
+
+Remember: Generate DETAILED, THOROUGH content. Include all required sections with substantial content. For Theory mode, you MUST generate slides with multiple bullet points each.`,
             onFinish: async ({ object }) => {
                 if (!object) return;
                 // Save to DB
@@ -118,7 +129,8 @@ export async function POST(req: Request) {
             }
         });
 
-        return result.toTextStreamResponse();
+        // Use toDataStreamResponse for proper streaming with useObject hook
+        return result.toTextStreamResponse({ headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
     } catch (error) {
         console.error("❌ Generation Error:", error);
         return new Response(JSON.stringify({ error: 'Generation failed' }), { status: 500 });

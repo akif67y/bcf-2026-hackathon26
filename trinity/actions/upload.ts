@@ -16,6 +16,8 @@ export async function uploadMaterial(formData: FormData) {
     const file = formData.get('file') as File;
     const title = formData.get('title') as string;
     const category = formData.get('category') as string;
+    const week = formData.get('week') as string;
+    const tags = formData.get('tags') as string;
 
     if (!file || !title) return { error: 'Missing file or title' };
 
@@ -76,7 +78,13 @@ export async function uploadMaterial(formData: FormData) {
         return { error: 'Failed to parse file: ' + err.message };
     }
 
-    // 3. Save Metadata
+    // 3. Save Metadata with week/tags
+    const metadata = {
+        week: week ? parseInt(week) : null,
+        tags: tags ? tags.split(',').map(t => t.trim()).filter(Boolean) : [],
+        content_type: isPdf ? 'pdf' : 'text',
+    };
+
     const { data: material, error: dbError } = await supabase
         .from('materials')
         .insert({
@@ -84,9 +92,11 @@ export async function uploadMaterial(formData: FormData) {
             category,
             file_url: fileName,
             type: isPdf ? 'pdf' : 'text',
+            metadata,
         })
         .select()
         .single();
+
 
     if (dbError) return { error: 'Database error: ' + dbError.message };
 
