@@ -2,7 +2,8 @@
 
 import { createClient } from '@/utils/supabase/server';
 import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { generateText } from "ai";
+import { google } from "@ai-sdk/google";
 import { getEmbeddings } from '@/lib/ai/embedding';
 import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
@@ -10,7 +11,6 @@ import { tmpdir } from 'os';
 
 // Initialize Google AI
 const fileManager = new GoogleAIFileManager(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_GENERATIVE_AI_API_KEY!);
 
 export async function uploadMaterial(formData: FormData) {
     const file = formData.get('file') as File;
@@ -48,15 +48,21 @@ export async function uploadMaterial(formData: FormData) {
                 displayName: title,
             });
 
-            // C. Ask Gemini to clean it (USING NEWER MODEL)
-            // Switch to 'gemini-2.0-flash' which is the current stable/beta standard
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
-            const result = await model.generateContent([
-                { fileData: { mimeType: uploadResponse.file.mimeType, fileUri: uploadResponse.file.uri } },
-                { text: "Extract all text. Output clear, plain text. Fix formatting/spacing issues. Do not summarize." }
-            ]);
-            cleanText = result.response.text();
+            // C. Ask Gemini to clean it (USING VERCEL AI SDK + GEMINI 2.5)
+            // Using 'gemini-2.5-flash' as requested
+            const { text } = await generateText({
+                model: google('gemini-2.5-flash'),
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'file', mediaType: uploadResponse.file.mimeType, data: new URL(uploadResponse.file.uri) },
+                            { type: 'text', text: "Extract all text. Output clear, plain text. Fix formatting/spacing issues. Do not summarize." }
+                        ]
+                    }
+                ]
+            });
+            cleanText = text;
 
             // Cleanup
             await unlink(tempPath);
