@@ -31,12 +31,12 @@ export async function uploadMaterial(formData: FormData) {
         const fileExt = file.name.split('.').pop();
         const filePath = `${Date.now()}_${title.replace(/\s/g, '_')}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
-            .from('course-content')
+            .from('Course-content')
             .upload(filePath, file);
 
         if (uploadError) throw new Error(`Upload Failed: ${uploadError.message}`);
 
-        const fileUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/course-content/${filePath}`;
+        const fileUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/Course-content/${filePath}`;
 
         // 2. Parse Text (Local)
         const arrayBuffer = await file.arrayBuffer();
